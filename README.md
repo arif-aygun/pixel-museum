@@ -3,8 +3,7 @@
 Every morning, Pixel Museum picks a public-domain painting from the
 [Metropolitan Museum of Art](https://www.metmuseum.org/about-the-met/policies-and-documents/open-access),
 turns it into 64×64 pixel art with a gold museum frame, and publishes it to GitHub Pages.
-A small local script then shows the painting on your Discord profile as a
-**"Playing Pixel Museum"** activity card.
+If you want, a small optional script can also show the painting on your Discord profile.
 
 **Today's piece:** https://arif-aygun.github.io/pixel-museum/
 
@@ -14,7 +13,7 @@ A small local script then shows the painting on your Discord profile as a
 pixel_art_of_the_day.py        picks the day's painting and pixelates it into docs/
 .github/workflows/daily.yml    runs the script every day at 04:07 UTC and commits the result
 docs/index.html                the page that shows today's piece (served by GitHub Pages)
-rpc/pixel_museum_rpc.py        Discord Rich Presence; runs on your own computer
+rpc/pixel_museum_rpc.py        optional: Discord Rich Presence, runs on your own computer
 ```
 
 1. The workflow searches the Met collection API for highlighted paintings. It hashes the date
@@ -23,11 +22,10 @@ rpc/pixel_museum_rpc.py        Discord Rich Presence; runs on your own computer
    dithering, framed, and scaled up 8× to 512×512.
 3. The PNG goes to `docs/art/YYYY-MM-DD.png`, and the metadata (title, artist, date, link)
    goes to `docs/today.json`.
-4. The Rich Presence script reads `today.json` every 30 minutes and updates your Discord status.
+Anything that can read `today.json` can show the painting, for example the optional Discord
+script below.
 
 ## Run your own
-
-### 1. GitHub Pages
 
 1. Fork this repo, or push a copy of it to a **public** repository.
 2. **Settings → Pages**: set Source to *Deploy from a branch*, Branch to `main`,
@@ -37,7 +35,18 @@ rpc/pixel_museum_rpc.py        Discord Rich Presence; runs on your own computer
 
 After that, the workflow runs every morning on its own.
 
-### 2. Discord Rich Presence
+### Try the converter locally
+
+```
+pip install pillow requests
+python pixel_art_of_the_day.py               # fetch today's painting
+python pixel_art_of_the_day.py --local x.jpg # pixelate any local image
+```
+
+## Optional: show it on Discord
+
+The script in `rpc/` shows today's painting on your Discord profile as a
+**"Playing Pixel Museum"** activity card, and refreshes it every 30 minutes.
 
 1. In the [Discord Developer Portal](https://discord.com/developers/applications),
    create an application named **Pixel Museum** and copy its **Application ID**.
@@ -53,7 +62,7 @@ After that, the workflow runs every morning on its own.
 
 The script needs no bot token, only the Application ID. If Discord restarts, the script reconnects on its own.
 
-#### Start with Windows
+### Start with Windows
 
 Press `Win + R`, run `shell:startup`, and create a shortcut in that folder with this target:
 
@@ -63,15 +72,7 @@ pythonw "C:\path\to\pixel-museum\rpc\pixel_museum_rpc.py"
 
 `pythonw` runs the script in the background, without a console window.
 
-### Try the converter locally
-
-```
-pip install pillow requests
-python pixel_art_of_the_day.py               # fetch today's painting
-python pixel_art_of_the_day.py --local x.jpg # pixelate any local image
-```
-
-## Discord profile widget (disabled)
+### Discord profile widget (disabled)
 
 Discord currently doesn't allow new applications to create profile widgets. The workflow
 already has an **Update Discord widget** step for when it does. To use it, add the
