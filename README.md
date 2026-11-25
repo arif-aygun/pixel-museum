@@ -1,55 +1,85 @@
 # Pixel Museum
 
-Her sabah Met Museum'dan public-domain bir tablo seçer, pixel art'a çevirir, altın çerçeveye koyar
-ve GitHub Pages'te yayınlar. Bilgisayarındaki küçük bir script de bunu Discord profilinde
-**"Playing Pixel Museum"** kartı olarak gösterir.
+Every morning, Pixel Museum picks a public-domain painting from the
+[Metropolitan Museum of Art](https://www.metmuseum.org/about-the-met/policies-and-documents/open-access),
+turns it into 64×64 pixel art with a gold museum frame, and publishes it to GitHub Pages.
+A small local script then shows the painting on your Discord profile as a
+**"Playing Pixel Museum"** activity card.
+
+**Today's piece:** https://arif-aygun.github.io/pixel-museum/
+
+## How it works
 
 ```
-pixel_art_of_the_day.py        # tabloyu seç + pixel art'a çevir -> docs/
-.github/workflows/daily.yml    # her gün 07:07'de çalıştırır, commit'ler
-docs/index.html                # günün tablosunu gösteren sayfa (GitHub Pages)
-rpc/pixel_museum_rpc.py        # Discord Rich Presence (senin bilgisayarında çalışır)
+pixel_art_of_the_day.py        picks the day's painting and pixelates it into docs/
+.github/workflows/daily.yml    runs the script every day at 04:07 UTC and commits the result
+docs/index.html                the page that shows today's piece (served by GitHub Pages)
+rpc/pixel_museum_rpc.py        Discord Rich Presence; runs on your own computer
 ```
 
-## 1. GitHub tarafı (bir kez)
+1. The workflow searches the Met collection API for highlighted paintings. It hashes the date
+   to choose one, so every date always maps to the same painting.
+2. The image is center-cropped, downsampled to 56×56, reduced to a 16-colour palette without
+   dithering, framed, and scaled up 8× to 512×512.
+3. The PNG goes to `docs/art/YYYY-MM-DD.png`, and the metadata (title, artist, date, link)
+   goes to `docs/today.json`.
+4. The Rich Presence script reads `today.json` every 30 minutes and updates your Discord status.
 
-1. GitHub'da **`pixel-museum`** adında **public** bir repo aç ve bu klasördeki her şeyi push'la.
-   Repo adını değiştirirsen RPC script'indeki `BASE` linkini de değiştir.
-2. **Settings → Pages → Build and deployment**: Source = *Deploy from a branch*,
-   Branch = `main`, klasör = `/docs` → Save.
-3. **Actions** sekmesi → *pixel-museum-daily* → **Run workflow**. İlk tablo hemen oluşur.
-4. 1-2 dakika sonra `https://arif-aygun.github.io/pixel-museum/` adresini aç, tabloyu görmelisin.
+## Run your own
 
-Sonrasında workflow her sabah kendiliğinden çalışır.
+### 1. GitHub Pages
 
-## 2. Discord tarafı (Rich Presence)
+1. Fork this repo, or push a copy of it to a **public** repository.
+2. **Settings → Pages**: set Source to *Deploy from a branch*, Branch to `main`,
+   and folder to `/docs`.
+3. **Actions → pixel-museum-daily → Run workflow** to generate the first piece.
+4. After a minute or two, open `https://<your-username>.github.io/<repo-name>/`.
 
-1. Developer Portal → Pixel Museum → **General Information**: İsim ve ikon kartta görünür,
-   ikona bir pixel art koyabilirsin.
-2. Bilgisayarında:
+After that, the workflow runs every morning on its own.
+
+### 2. Discord Rich Presence
+
+1. In the [Discord Developer Portal](https://discord.com/developers/applications),
+   create an application named **Pixel Museum** and copy its **Application ID**.
+   The application's name and icon are what appear on the card.
+2. In [`rpc/pixel_museum_rpc.py`](rpc/pixel_museum_rpc.py), set `CLIENT_ID` to that ID
+   and `BASE` to your Pages URL.
+3. Install the dependencies and run the script while the Discord desktop app is open:
    ```
    pip install pypresence requests
-   ```
-3. Discord masaüstü uygulaması açıkken çalıştır:
-   ```
    python rpc/pixel_museum_rpc.py
    ```
-   Konsolda `Gösteriliyor: ...` yazısı çıkınca profiline bak.
-4. Discord → User Settings → **Activity Privacy** → "Share your detected activities with others" açık olmalı.
+4. In Discord, turn on **User Settings → Activity Privacy → Share your detected activities with others**.
 
-### Windows açılışında otomatik başlatma
-`Win + R` → `shell:startup` → açılan klasöre yeni bir **kısayol** oluştur, hedefi:
+The script needs no bot token, only the Application ID. If Discord restarts, the script reconnects on its own.
+
+#### Start with Windows
+
+Press `Win + R`, run `shell:startup`, and create a shortcut in that folder with this target:
+
 ```
-pythonw "C:\Users\arif\Documents\GitHub\pixel-museum\rpc\pixel_museum_rpc.py"
+pythonw "C:\path\to\pixel-museum\rpc\pixel_museum_rpc.py"
 ```
-`pythonw` konsol penceresi açmadan arka planda çalışır.
 
-## 3. Discord widget (şimdilik kapalı)
+`pythonw` runs the script in the background, without a console window.
 
-Discord yeni uygulamalarda widget oluşturmayı kapattı. Resmi özellik geldiğinde
-`daily.yml`'deki **Update Discord widget** adımı hazır: Secrets'ı ekle ve `if: false` satırını sil.
+### Try the converter locally
 
-## Notlar
-- Eserler Met Museum Open Access'ten, sadece public-domain olanlar seçiliyor.
-- Dosya adları tarihli (`docs/art/2026-11-26.png`), böylece Discord eski görseli cache'ten göstermez.
-- Rich Presence token kullanmaz, sadece Application ID'ye ihtiyaç duyar.
+```
+pip install pillow requests
+python pixel_art_of_the_day.py               # fetch today's painting
+python pixel_art_of_the_day.py --local x.jpg # pixelate any local image
+```
+
+## Discord profile widget (disabled)
+
+Discord currently doesn't allow new applications to create profile widgets. The workflow
+already has an **Update Discord widget** step for when it does. To use it, add the
+`DISCORD_APP_ID`, `DISCORD_USER_ID` and `DISCORD_BOT_TOKEN` secrets, then remove the
+`if: false` line.
+
+## Notes
+
+- Only public-domain works are used, via the Met's Open Access API.
+- Each image file is named after its date, so Discord never shows a stale cached image.
+- The Met retired the `v1/search` endpoint on 2026-10-01, so this project uses `v1.1/search`.
