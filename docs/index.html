@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pixel Museum</title>
+<style>
+  :root { --bg:#120b1c; --fg:#f4e3a1; --dim:#8a7fb8; --accent:#ff5fd2; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg);
+         color:var(--fg); font-family:ui-monospace, "Cascadia Code", Consolas, monospace; }
+  main { text-align:center; padding:24px; }
+  h1 { font-size:14px; letter-spacing:.3em; color:var(--dim); margin:0 0 24px; font-weight:400; }
+  h1 span { color:var(--accent); }
+  img { width:min(80vmin,512px); image-rendering:pixelated; display:block; margin:0 auto;
+        box-shadow:0 0 60px #ff5fd233; }
+  .cap { margin-top:20px; font-size:16px; }
+  .meta { margin-top:6px; color:var(--dim); font-size:13px; }
+  a { color:var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <h1>PIXEL <span>MUSEUM</span></h1>
+  <img id="art" alt="Today's piece">
+  <div class="cap" id="cap">loading…</div>
+  <div class="meta" id="meta"></div>
+</main>
+<script>
+fetch("today.json?t=" + Date.now()).then(r => r.json()).then(a => {
+  const img = document.getElementById("art");
+  img.src = a.image_url; img.alt = a.caption;
+  document.getElementById("cap").textContent = a.title;
+  const meta = document.getElementById("meta");
+  meta.textContent = a.artist + (a.date ? " · " + a.date : "") + " · ";
+  if (a.source) { const l = document.createElement("a"); l.href = a.source; l.textContent = "original at the Met"; meta.append(l); }
+}).catch(() => { document.getElementById("cap").textContent = "no piece yet: run the workflow once"; });
+</script>
+</body>
+</html>
