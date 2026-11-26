@@ -1,5 +1,25 @@
 [
   {
+    "day": "2026-11-26",
+    "image": "art/2026-11-26.png",
+    "title": "Thousand-Armed Chenresi, a Cosmic Form of the Bodhisattva Avalokiteshvara",
+    "artist": "Unknown",
+    "date": "14th century",
+    "source": "https://www.metmuseum.org/art/collection/search/37799",
+    "caption": "Unknown — Thousand-Armed Chenresi, a Cosmic Form of the Bodhisattva Avalokiteshvara (14th century)",
+    "palette": [
+      "403c38",
+      "664435",
+      "5c493a",
+      "794336",
+      "75533b",
+      "80503a",
+      "866649",
+      "f5edd3"
+    ],
+    "palette_file": "palettes/2026-11-26"
+  },
+  {
     "day": "2026-11-25",
     "image": "art/2026-11-25.png",
     "title": "Madame Roulin and Her Baby",
