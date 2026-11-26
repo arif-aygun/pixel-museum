@@ -3,16 +3,21 @@
 Every morning, Pixel Museum picks a public-domain painting from the
 [Metropolitan Museum of Art](https://www.metmuseum.org/about-the-met/policies-and-documents/open-access),
 turns it into 64×64 pixel art with a gold museum frame, and publishes it to GitHub Pages.
+It also pulls an 8-colour palette out of the painting that you can download for your own
+pixel art, and keeps every day in an archive.
 If you want, a small optional script can also show the painting on your Discord profile.
 
-**Today's piece:** https://arif-aygun.github.io/pixel-museum/
+**Today's piece:** https://arif-aygun.github.io/pixel-museum/ ·
+**Archive:** https://arif-aygun.github.io/pixel-museum/archive.html
 
 ## How it works
 
 ```
 pixel_art_of_the_day.py        picks the day's painting and pixelates it into docs/
+palette.py                     extracts the day's 8-colour palette (tests in tests/)
 .github/workflows/daily.yml    runs the script every day at 04:07 UTC and commits the result
-docs/index.html                the page that shows today's piece (served by GitHub Pages)
+docs/index.html                the page that shows today's piece and palette (GitHub Pages)
+docs/archive.html              every past piece with its palette
 rpc/pixel_museum_rpc.py        optional: Discord Rich Presence, runs on your own computer
 ```
 
@@ -22,8 +27,28 @@ rpc/pixel_museum_rpc.py        optional: Discord Rich Presence, runs on your own
    dithering, framed, and scaled up 8× to 512×512.
 3. The PNG goes to `docs/art/YYYY-MM-DD.png`, and the metadata (title, artist, date, link)
    goes to `docs/today.json`.
+4. The palette is saved to `docs/palettes/YYYY-MM-DD` in three formats, and the day is added
+   to `docs/archive.json`.
+
 Anything that can read `today.json` can show the painting, for example the optional Discord
 script below.
+
+## The daily palette
+
+Each palette has 8 colours, sorted from dark to light, and comes in three formats:
+
+| File | Use it in |
+|------|-----------|
+| `.hex` | [Lospec](https://lospec.com/palette-list) format: one hex code per line |
+| `.gpl` | GIMP, Aseprite, Krita |
+| `.png` | 8×1 image, one pixel per colour (Aseprite, Lospec, any editor) |
+
+How the colours are chosen: the 56×56 image is converted to CIELAB, where distance roughly
+matches how different two colours look. K-means splits it into 16 clusters, which are then
+merged down to 8 by Ward cost, so similar and small clusters merge first and a small but
+distinct accent, like a red sleeve, survives. Each colour is a real pixel from the painting,
+not an average, so the colours stay saturated. Compared with plain median cut, this gives
+fewer near-duplicate browns and keeps the accent colours.
 
 ## Run your own
 
@@ -40,7 +65,8 @@ After that, the workflow runs every morning on its own.
 ```
 pip install pillow requests
 python pixel_art_of_the_day.py               # fetch today's painting
-python pixel_art_of_the_day.py --local x.jpg # pixelate any local image
+python pixel_art_of_the_day.py --local x.jpg # pixelate any local image (not added to the archive)
+python -m unittest discover -s tests         # palette tests
 ```
 
 ## Optional: show it on Discord
