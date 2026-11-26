@@ -17,6 +17,15 @@
   .cap { margin-top:20px; font-size:16px; }
   .meta { margin-top:6px; color:var(--dim); font-size:13px; }
   a { color:var(--dim); }
+  .palette { display:flex; justify-content:center; gap:6px; margin:28px auto 0; flex-wrap:wrap; }
+  .sw { width:56px; cursor:pointer; background:none; border:0; padding:0; font:inherit; color:var(--dim); }
+  .sw i { display:block; height:56px; box-shadow:inset 0 0 0 2px #0003; }
+  .sw span { display:block; font-size:11px; margin-top:6px; }
+  .sw:hover span, .sw:focus-visible span { color:var(--fg); }
+  .sw.copied span { color:var(--accent); }
+  .dl { margin-top:14px; font-size:12px; color:var(--dim); }
+  .dl a { margin:0 4px; }
+  nav { margin-top:32px; font-size:12px; letter-spacing:.2em; }
 </style>
 </head>
 <body>
@@ -25,6 +34,9 @@
   <img id="art" alt="Today's piece">
   <div class="cap" id="cap">loading…</div>
   <div class="meta" id="meta"></div>
+  <div class="palette" id="palette" aria-label="Today's palette"></div>
+  <div class="dl" id="dl" hidden>palette: <a id="dl-hex" download>.hex</a><a id="dl-gpl" download>.gpl</a><a id="dl-png" download>.png</a></div>
+  <nav><a href="archive.html">ARCHIVE →</a></nav>
 </main>
 <script>
 fetch("today.json?t=" + Date.now()).then(r => r.json()).then(a => {
@@ -34,7 +46,27 @@ fetch("today.json?t=" + Date.now()).then(r => r.json()).then(a => {
   const meta = document.getElementById("meta");
   meta.textContent = a.artist + (a.date ? " · " + a.date : "") + " · ";
   if (a.source) { const l = document.createElement("a"); l.href = a.source; l.textContent = "original at the Met"; meta.append(l); }
+  renderPalette(document.getElementById("palette"), a.palette || []);
+  if (a.palette_file) {
+    for (const ext of ["hex", "gpl", "png"]) document.getElementById("dl-" + ext).href = a.palette_file + "." + ext;
+    document.getElementById("dl").hidden = false;
+  }
 }).catch(() => { document.getElementById("cap").textContent = "no piece yet: run the workflow once"; });
+function renderPalette(el, hexes) {
+  for (const h of hexes) {
+    if (!/^[0-9a-f]{6}$/i.test(h)) continue;
+    const b = document.createElement("button");
+    b.className = "sw"; b.title = "copy #" + h;
+    const chip = document.createElement("i"); chip.style.background = "#" + h;
+    const label = document.createElement("span"); label.textContent = "#" + h;
+    b.append(chip, label);
+    b.onclick = () => navigator.clipboard.writeText("#" + h).then(() => {
+      b.classList.add("copied"); label.textContent = "copied";
+      setTimeout(() => { b.classList.remove("copied"); label.textContent = "#" + h; }, 900);
+    });
+    el.append(b);
+  }
+}
 </script>
 </body>
 </html>

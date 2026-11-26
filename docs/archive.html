@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pixel Museum · Archive</title>
+<style>
+  :root { --bg:#120b1c; --card:#1b1229; --fg:#f4e3a1; --dim:#8a7fb8; --accent:#ff5fd2; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font-family:ui-monospace, "Cascadia Code", Consolas, monospace; }
+  header { text-align:center; padding:40px 24px 8px; }
+  h1 { font-size:14px; letter-spacing:.3em; color:var(--dim); margin:0; font-weight:400; }
+  h1 span { color:var(--accent); }
+  header p { color:var(--dim); font-size:12px; margin:10px 0 0; }
+  a { color:var(--dim); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:20px;
+          max-width:1100px; margin:32px auto; padding:0 24px; }
+  article { background:var(--card); padding:14px; }
+  article img { width:100%; aspect-ratio:1; image-rendering:pixelated; display:block; }
+  .day { font-size:11px; color:var(--accent); letter-spacing:.15em; margin-top:12px; }
+  .title { font-size:14px; margin-top:4px; line-height:1.35; }
+  .artist { font-size:12px; color:var(--dim); margin-top:2px; }
+  .strip { display:flex; margin-top:12px; }
+  .strip button { flex:1; height:28px; border:0; padding:0; cursor:pointer; }
+  .strip button:hover, .strip button:focus-visible { outline:2px solid var(--fg); outline-offset:-2px; }
+  .row { display:flex; justify-content:space-between; font-size:11px; color:var(--dim); margin-top:8px; }
+  .row span a { margin-left:6px; }
+  .empty { text-align:center; color:var(--dim); grid-column:1/-1; }
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--accent);
+           color:var(--bg); padding:6px 12px; font-size:12px; opacity:0; transition:opacity .2s; pointer-events:none; }
+  .toast.on { opacity:1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>PIXEL <span>MUSEUM</span> · ARCHIVE</h1>
+  <p>one painting a day, and the 8 colors it was made of. <a href="./">← today</a></p>
+</header>
+<main class="grid" id="grid"></main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+const HEX = /^[0-9a-f]{6}$/i;
+const grid = document.getElementById("grid");
+const toast = document.getElementById("toast");
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function flash(msg) {
+  toast.textContent = msg; toast.classList.add("on");
+  clearTimeout(flash.t); flash.t = setTimeout(() => toast.classList.remove("on"), 900);
+}
+
+function card(e) {
+  const a = el("article");
+  const img = el("img"); img.src = e.image; img.alt = e.caption || e.title || ""; img.loading = "lazy";
+  a.append(img, el("div", "day", e.day), el("div", "title", e.title || "untitled"),
+           el("div", "artist", [e.artist, e.date].filter(Boolean).join(" · ")));
+
+  const strip = el("div", "strip");
+  for (const h of (e.palette || []).filter(h => HEX.test(h))) {
+    const b = el("button"); b.style.background = "#" + h; b.title = "#" + h;
+    b.setAttribute("aria-label", "copy #" + h);
+    b.onclick = () => navigator.clipboard.writeText("#" + h).then(() => flash("copied #" + h));
+    strip.append(b);
+  }
+  if (strip.childElementCount) a.append(strip);
+
+  const row = el("div", "row");
+  const copyAll = el("a", null, "copy all"); copyAll.href = "#";
+  copyAll.onclick = ev => { ev.preventDefault();
+    navigator.clipboard.writeText(e.palette.join("\n")).then(() => flash("copied palette")); };
+  const dl = el("span");
+  if (e.palette_file) for (const ext of ["hex", "gpl", "png"]) {
+    const l = el("a", null, "." + ext); l.href = e.palette_file + "." + ext; l.download = ""; dl.append(l);
+  }
+  if (e.palette && e.palette.length) row.append(copyAll);
+  row.append(dl);
+  a.append(row);
+  return a;
+}
+
+fetch("archive.json?t=" + Date.now()).then(r => r.json()).then(list => {
+  if (!list.length) throw 0;
+  for (const e of list) grid.append(card(e));
+}).catch(() => grid.append(el("p", "empty", "the archive is empty: run the workflow once")));
+</script>
+</body>
+</html>
