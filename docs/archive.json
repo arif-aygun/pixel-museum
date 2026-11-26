@@ -1,0 +1,22 @@
+[
+  {
+    "day": "2026-11-25",
+    "image": "art/2026-11-25.png",
+    "title": "Madame Roulin and Her Baby",
+    "artist": "Vincent van Gogh",
+    "date": "1888",
+    "source": "https://www.metmuseum.org/art/collection/search/459123",
+    "caption": "Vincent van Gogh — Madame Roulin and Her Baby (1888)",
+    "palette": [
+      "2d4c18",
+      "5b4f17",
+      "546b1c",
+      "8f7019",
+      "b78e17",
+      "aca966",
+      "d9ad0c",
+      "cfcdad"
+    ],
+    "palette_file": "palettes/2026-11-25"
+  }
+]

@@ -9,6 +9,7 @@ Kullanım:
 """
 import argparse, datetime as dt, hashlib, io, json, os, sys
 from PIL import Image
+import palette as pal
 
 MET = "https://collectionapi.metmuseum.org/public/collection/v1"
 SEARCH = "https://collectionapi.metmuseum.org/public/collection/v1.1/search"
@@ -17,12 +18,14 @@ COLORS = 16        # palet boyutu
 SCALE = 8          # çıktı büyütme (64*8 = 512px)
 OUT = "docs"
 
-def pixelate(img: Image.Image) -> Image.Image:
+def downsample(img: Image.Image) -> Image.Image:
+    """Ortadan kare kırpıp çerçeve içi boyuta (56x56) küçültür."""
     img = img.convert("RGB")
-    # ortadan kare kırp
     w, h = img.size; s = min(w, h)
     img = img.crop(((w - s) // 2, (h - s) // 2, (w + s) // 2, (h + s) // 2))
-    small = img.resize((GRID - 8, GRID - 8), Image.BOX)          # alan ortalaması = temiz pikseller
+    return img.resize((GRID - 8, GRID - 8), Image.BOX)           # alan ortalaması = temiz pikseller
+
+def pixelate(small: Image.Image) -> Image.Image:
     small = small.quantize(colors=COLORS, method=Image.Quantize.MEDIANCUT,
                            dither=Image.Dither.NONE).convert("RGB")
     framed = add_frame(small)
@@ -91,12 +94,38 @@ def main():
         src = Image.open(io.BytesIO(http_get(obj["primaryImageSmall"], timeout=30).content))
 
     fname = f"art/{day.isoformat()}.png"          # tarihli isim = Discord cache'ini atlatır
-    pixelate(src).save(f"{OUT}/{fname}")
+    small = downsample(src)
+    pixelate(small).save(f"{OUT}/{fname}")
     meta["image_url"] = f"{a.base_url.rstrip('/')}/{fname}" if a.base_url else fname
     meta["caption"] = f"{meta['artist']} — {meta['title']}" + (f" ({meta['date']})" if meta["date"] else "")
-    with open(f"{OUT}/today.json", "w", encoding="utf-8") as f:
-        json.dump(meta, f, ensure_ascii=False, indent=2)
+    meta.update(write_palette(small, day, meta["caption"]))
+    write_json(f"{OUT}/today.json", meta)
+    if not a.local:                               # yerel denemeler arşive girmez
+        update_archive(day, fname, meta)
     print(json.dumps(meta, ensure_ascii=False, indent=2))
+
+def write_palette(small: Image.Image, day: dt.date, caption: str) -> dict:
+    """Günün paletini docs/palettes/ altına yazar; today.json'a eklenecek alanları döner."""
+    colors = pal.extract_palette(small)
+    stem = f"palettes/{day.isoformat()}"
+    pal.write_palette_files(colors, f"{OUT}/{stem}", f"Pixel Museum {day.isoformat()}: {caption}")
+    return {"palette": pal.to_hex(colors), "palette_file": stem}
+
+def update_archive(day: dt.date, fname: str, meta: dict) -> None:
+    path = f"{OUT}/archive.json"
+    try:
+        with open(path, encoding="utf-8") as f:
+            entries = json.load(f)
+    except FileNotFoundError:
+        entries = []
+    keys = ("title", "artist", "date", "source", "caption", "palette", "palette_file")
+    entry = {"day": day.isoformat(), "image": fname, **{k: meta.get(k, "") for k in keys}}
+    write_json(path, pal.upsert_archive(entries, entry, key="day"))
+
+def write_json(path: str, data: dict | list) -> None:
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+        f.write("\n")
 
 if __name__ == "__main__":
     main()
