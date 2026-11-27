@@ -1,5 +1,25 @@
 [
   {
+    "day": "2026-11-27",
+    "image": "art/2026-11-27.png",
+    "title": "Madame Georges Charpentier (Marguerite-Louise Lemonnier, 1848–1904) and Her Children, Georgette-Berthe (1872–1945) and Paul-Emile-Charles (1875–1895)",
+    "artist": "Auguste Renoir",
+    "date": "1878",
+    "source": "https://www.metmuseum.org/art/collection/search/438815",
+    "caption": "Auguste Renoir — Madame Georges Charpentier (Marguerite-Louise Lemonnier, 1848–1904) and Her Children, Georgette-Berthe (1872–1945) and Paul-Emile-Charles (1875–1895) (1878)",
+    "palette": [
+      "000000",
+      "282928",
+      "4e4a43",
+      "70473b",
+      "6f644d",
+      "7b9093",
+      "988d65",
+      "a8a592"
+    ],
+    "palette_file": "palettes/2026-11-27"
+  },
+  {
     "day": "2026-11-26",
     "image": "art/2026-11-26.png",
     "title": "Thousand-Armed Chenresi, a Cosmic Form of the Bodhisattva Avalokiteshvara",
